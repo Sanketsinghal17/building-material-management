@@ -23,3 +23,8 @@ def list_customers():
         for row in rows:
             print(row)
         conn.close()
+
+if __name__ == "__main__":
+    add_customer("Amit Kumar", "9991122334", "Delhi")
+    add_customer("Priya Singh", "9876543210", "Noida")
+    list_customers()
