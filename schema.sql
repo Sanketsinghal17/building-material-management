@@ -39,3 +39,11 @@ CREATE TABLE IF NOT EXISTS payments (
     paid_amount DECIMAL(12,2),
     FOREIGN KEY (order_no) REFERENCES sales(order_no)
 );
+
+CREATE TABLE IF NOT EXISTS customers (
+    customer_id INT AUTO_INCREMENT PRIMARY KEY,
+    customer_name VARCHAR(50) NOT NULL,
+    phone VARCHAR(15),
+    address VARCHAR(255)
+);
+
