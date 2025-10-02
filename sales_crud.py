@@ -45,6 +45,17 @@ def list_sales():
 
 
 if __name__ == "__main__":
-    # Example: Add a sale (replace item_id and details as needed)
-    add_sale("Ramesh", 1, 10, 3900.00, payment_method="Cash", amount_paid=2000, amount_due=1900, payment_status="Partially Paid")
+    # Test with valid customer and item IDs
+    add_sale(
+        customer_id=1,    # Amit Kumar
+        item_id=1,        # Cement
+        quantity=10,
+        total=3900.0,
+        payment_method="Cash",
+        amount_paid=2000.0,
+        amount_due=1900.0,
+        payment_status="Partially Paid"
+    )
     list_sales()
+
+
