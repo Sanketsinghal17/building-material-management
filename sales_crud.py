@@ -30,13 +30,19 @@ def list_sales():
     if conn:
         cursor = conn.cursor()
         cursor.execute("""
-            SELECT s.order_no, s.customer_name, m.item_name, s.quantity, s.sale_date, s.total, s.payment_method, s.amount_paid, s.amount_due, s.payment_status
-            FROM sales s JOIN materials m ON s.item_id = m.id
+            SELECT s.order_no, c.customer_name, m.item_name, s.quantity, s.sale_date, s.total,
+                   s.payment_method, s.amount_paid, s.amount_due, s.payment_status
+            FROM sales s
+            JOIN customers c ON s.customer_id = c.customer_id
+            JOIN materials m ON s.item_id = m.id
         """)
         rows = cursor.fetchall()
-        headers = ["OrderNo", "Customer", "Item", "Qty", "Date", "Total", "Payment", "Paid", "Due", "Status"]
-        print(tabulate(rows, headers=headers, tablefmt="grid"))
+        print("OrderNo | Customer   | Item     | Qty | Date       | Total   | Payment   | Paid    | Due     | Status")
+        print("--------|------------|----------|-----|------------|---------|-----------|---------|---------|--------------")
+        for row in rows:
+            print(row)
         conn.close()
+
 
 if __name__ == "__main__":
     # Example: Add a sale (replace item_id and details as needed)
