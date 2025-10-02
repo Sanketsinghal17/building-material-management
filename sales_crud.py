@@ -37,10 +37,8 @@ def list_sales():
             JOIN materials m ON s.item_id = m.id
         """)
         rows = cursor.fetchall()
-        print("OrderNo | Customer   | Item     | Qty | Date       | Total   | Payment   | Paid    | Due     | Status")
-        print("--------|------------|----------|-----|------------|---------|-----------|---------|---------|--------------")
-        for row in rows:
-            print(row)
+        headers = ["OrderNo", "Customer", "Item", "Qty", "Date", "Total", "Payment", "Paid", "Due", "Status"]
+        print(tabulate(rows, headers=headers, tablefmt="grid"))
         conn.close()
 
 
