@@ -23,6 +23,31 @@ def list_customers():
         for row in rows:
             print(row)
         conn.close()
+        
+def update_customer(customer_id, name=None, phone=None, address=None):
+    conn = create_connection()
+    if conn:
+        cursor = conn.cursor()
+        query = "UPDATE customers SET "
+        updates = []
+        values = []
+        if name:
+            updates.append("customer_name=%s")
+            values.append(name)
+        if phone:
+            updates.append("phone=%s")
+            values.append(phone)
+        if address:
+            updates.append("address=%s")
+            values.append(address)
+        query += ", ".join(updates)
+        query += " WHERE customer_id=%s"
+        values.append(customer_id)
+        cursor.execute(query, tuple(values))
+        conn.commit()
+        print(f"Customer {customer_id} updated.")
+        conn.close()
+
 
 if __name__ == "__main__":
     add_customer("Amit Kumar", "9991122334", "Delhi")
