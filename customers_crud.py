@@ -57,6 +57,18 @@ def delete_customer(customer_id):
         print(f"Customer {customer_id} deleted.")
         conn.close()
 
+def search_customer(name):
+    conn = create_connection()
+    if conn:
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM customers WHERE customer_name LIKE %s", (f"%{name}%",))
+        rows = cursor.fetchall()
+        print("ID | Name       | Phone       | Address")
+        print("--------------------------------------------")
+        for row in rows:
+            print(row)
+        conn.close()
+
 
 if __name__ == "__main__":
     add_customer("Amit Kumar", "9991122334", "Delhi")
