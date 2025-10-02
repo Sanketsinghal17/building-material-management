@@ -47,3 +47,8 @@ CREATE TABLE IF NOT EXISTS customers (
     address VARCHAR(255)
 );
 
+ALTER TABLE sales
+ADD COLUMN customer_id INT,
+ADD FOREIGN KEY (customer_id) REFERENCES customers(customer_id);
+
+
