@@ -48,6 +48,15 @@ def update_customer(customer_id, name=None, phone=None, address=None):
         print(f"Customer {customer_id} updated.")
         conn.close()
 
+def delete_customer(customer_id):
+    conn = create_connection()
+    if conn:
+        cursor = conn.cursor()
+        cursor.execute("DELETE FROM customers WHERE customer_id=%s", (customer_id,))
+        conn.commit()
+        print(f"Customer {customer_id} deleted.")
+        conn.close()
+
 
 if __name__ == "__main__":
     add_customer("Amit Kumar", "9991122334", "Delhi")
