@@ -51,4 +51,12 @@ ALTER TABLE sales
 ADD COLUMN customer_id INT,
 ADD FOREIGN KEY (customer_id) REFERENCES customers(customer_id);
 
+CREATE TABLE IF NOT EXISTS suppliers (
+    supplier_id INT AUTO_INCREMENT PRIMARY KEY,
+    supplier_name VARCHAR(50) NOT NULL,
+    phone VARCHAR(15),
+    address VARCHAR(255)
+);
+
+
 
