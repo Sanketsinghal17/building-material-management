@@ -58,5 +58,9 @@ CREATE TABLE IF NOT EXISTS suppliers (
     address VARCHAR(255)
 );
 
+ALTER TABLE materials
+ADD COLUMN supplier_id INT,
+ADD FOREIGN KEY (supplier_id) REFERENCES suppliers(supplier_id);
+
 
 
