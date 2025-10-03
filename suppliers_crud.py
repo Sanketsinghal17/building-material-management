@@ -62,4 +62,8 @@ def delete_supplier(supplier_id):
 if __name__ == "__main__":
     add_supplier("Mohan Traders", "9812211223", "Kolkata")
     add_supplier("SR Building Supply", "8799912345", "Mumbai")
+    update_supplier(1, phone="9000000000", address="Delhi")
+
+    # Delete supplier
+    delete_supplier(2)
     list_suppliers()
