@@ -23,3 +23,8 @@ def list_suppliers():
         for row in rows:
             print(row)
         conn.close()
+
+if __name__ == "__main__":
+    add_supplier("Mohan Traders", "9812211223", "Kolkata")
+    add_supplier("SR Building Supply", "8799912345", "Mumbai")
+    list_suppliers()
