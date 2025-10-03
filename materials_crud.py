@@ -1,15 +1,19 @@
 from db_connect import create_connection
 
-def add_material(item_name, price_per_unit, unit_type, quantity):
+def add_material(item_name, price_per_unit, unit_type, quantity, supplier_id):
     conn = create_connection()
     if conn:
         cursor = conn.cursor()
-        sql = "INSERT INTO materials (item_name, price_per_unit, unit_type, quantity_in_stock) VALUES (%s, %s, %s, %s)"
-        values = (item_name, price_per_unit, unit_type, quantity)
+        sql = """
+            INSERT INTO materials (item_name, price_per_unit, unit_type, quantity_in_stock, supplier_id)
+            VALUES (%s, %s, %s, %s, %s)
+        """
+        values = (item_name, price_per_unit, unit_type, quantity, supplier_id)
         cursor.execute(sql, values)
         conn.commit()
-        print(f"Material {item_name} added!")
+        print(f"Material {item_name} added with supplier ID {supplier_id}!")
         conn.close()
+
 
 def list_materials():
     conn = create_connection()
