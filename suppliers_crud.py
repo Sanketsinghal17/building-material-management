@@ -49,6 +49,15 @@ def update_supplier(supplier_id, name=None, phone=None, address=None):
         print(f"Supplier {supplier_id} updated.")
         conn.close()
 
+def delete_supplier(supplier_id):
+    conn = create_connection()
+    if conn:
+        cursor = conn.cursor()
+        cursor.execute("DELETE FROM suppliers WHERE supplier_id=%s", (supplier_id,))
+        conn.commit()
+        print(f"Supplier {supplier_id} deleted.")
+        conn.close()
+
 
 if __name__ == "__main__":
     add_supplier("Mohan Traders", "9812211223", "Kolkata")
