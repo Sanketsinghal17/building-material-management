@@ -23,6 +23,32 @@ def list_suppliers():
         for row in rows:
             print(row)
         conn.close()
+        
+def update_supplier(supplier_id, name=None, phone=None, address=None):
+    conn = create_connection()
+    if conn:
+        cursor = conn.cursor()
+        updates = []
+        values = []
+        if name:
+            updates.append("supplier_name=%s")
+            values.append(name)
+        if phone:
+            updates.append("phone=%s")
+            values.append(phone)
+        if address:
+            updates.append("address=%s")
+            values.append(address)
+        if not updates:
+            print("Nothing to update.")
+            return
+        sql = "UPDATE suppliers SET " + ", ".join(updates) + " WHERE supplier_id=%s"
+        values.append(supplier_id)
+        cursor.execute(sql, tuple(values))
+        conn.commit()
+        print(f"Supplier {supplier_id} updated.")
+        conn.close()
+
 
 if __name__ == "__main__":
     add_supplier("Mohan Traders", "9812211223", "Kolkata")
