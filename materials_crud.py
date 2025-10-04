@@ -47,6 +47,24 @@ def delete_material(id):
         conn.commit()
         print(f"Material ID {id} deleted!")
         conn.close()
+        
+def show_low_stock(threshold=20):
+    conn = create_connection()
+    if conn:
+        cursor = conn.cursor()
+        cursor.execute(
+            "SELECT item_name, quantity_in_stock FROM materials WHERE quantity_in_stock <= %s",
+            (threshold,)
+        )
+        rows = cursor.fetchall()
+        if rows:
+            print("Low Stock Alert!")
+            for item, qty in rows:
+                print(f"{item}: {qty} units left")
+        else:
+            print("All stocks are sufficient.")
+        conn.close()
+
 
 if __name__ == "__main__":
     # Add sample materials
