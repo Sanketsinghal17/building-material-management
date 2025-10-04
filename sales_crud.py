@@ -76,5 +76,7 @@ if __name__ == "__main__":
     add_sale(customer_id=2, item_id=2, quantity=5, total=23000.0, payment_method="Credit", amount_paid=23000.0, amount_due=0.0, payment_status="Paid")
     add_sale(customer_id=1, item_id=5, quantity=8, total=360.0, payment_method="Cash", amount_paid=360.0, amount_due=0.0, payment_status="Paid")
     list_sales()
+    popular_items()
+
 
 
