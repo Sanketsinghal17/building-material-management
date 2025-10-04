@@ -84,6 +84,32 @@ list_sales()
 ### Improved Listing
 Sales are displayed in a formatted table with meaningful columns like Customer, Item, Quantity, Date, etc.
 
+## Inventory Alerts & Low Stock Notifications
 
----
+This feature helps monitor the stock levels of materials. It alerts you when any material's quantity in stock drops below a threshold.
 
+### How to Use
+
+show_low_stock()      #Shows all items with quantity <= 20
+show_low_stock(10)    # Custom threshold, e.g. items with quantity <= 10
+
+### Expected Output Example:
+
+Low Stock Alert!
+Cement: 15 units left
+Bricks: 7 units left
+
+## Sales Analytics
+
+Analytics tools provide a quick overview of your shop’s sales performance, highlighting top-selling products.
+
+### How to Use
+
+popular_items()       # Lists top 5 selling materials
+
+### Expected Output Example:
+
+Top-Selling Items:
+Bricks: 120 units
+Tiles (Box of 10): 95 units
+Cement: 80 units
