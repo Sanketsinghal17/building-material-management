@@ -85,6 +85,10 @@ if __name__ == "__main__":
     
     # List all materials
     list_materials()
+    
+    show_low_stock()        # uses default threshold of 20
+    show_low_stock(10)      # custom threshold if you want
+
 
     # Example for updating material (uncomment to use)
     # update_material(1, price=400.00)       # update price of material with ID 1
