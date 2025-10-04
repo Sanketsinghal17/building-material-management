@@ -40,6 +40,24 @@ def list_sales():
         headers = ["OrderNo", "Customer", "Item", "Qty", "Date", "Total", "Payment", "Paid", "Due", "Status"]
         print(tabulate(rows, headers=headers, tablefmt="grid"))
         conn.close()
+        
+def popular_items():
+    conn = create_connection()
+    if conn:
+        cursor = conn.cursor()
+        cursor.execute("""
+            SELECT m.item_name, SUM(s.quantity) as total_sold
+            FROM sales s JOIN materials m ON s.item_id = m.id
+            GROUP BY m.item_name
+            ORDER BY total_sold DESC
+            LIMIT 5
+        """)
+        rows = cursor.fetchall()
+        print("Top-Selling Items:")
+        for item, sold in rows:
+            print(f"{item}: {sold} units")
+        conn.close()
+
 
 
 if __name__ == "__main__":
