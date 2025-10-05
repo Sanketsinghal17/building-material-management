@@ -1,6 +1,13 @@
 from db_connect import create_connection
+import re 
 
 def add_customer(name, phone, address):
+    if not name.strip():
+        print("Error: Customer name cannot be empty.")
+        return
+    if not re.match(r"^\d{10}$", phone):
+        print("Error: Phone number must be exactly 10 digits.")
+        return
     conn = create_connection()
     if conn:
         cursor = conn.cursor()
