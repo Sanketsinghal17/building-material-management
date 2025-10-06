@@ -1,5 +1,6 @@
 from db_connect import create_connection
 import re
+from tabulate import tabulate
 
 def add_supplier(name, phone, address):
     if not name.strip():
@@ -44,7 +45,28 @@ def list_suppliers():
     finally:
         if conn:
             conn.close()
-            
+
+def search_supplier(name):
+    conn = None
+    try:
+        conn = create_connection()
+        if conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                "SELECT supplier_id, supplier_name, phone, address FROM suppliers WHERE supplier_name LIKE %s",
+                (f"%{name}%",)
+            )
+            rows = cursor.fetchall()
+            if rows:
+                print(tabulate(rows, headers=["ID", "Name", "Phone", "Address"], tablefmt="grid"))
+            else:
+                print(f"No suppliers found matching: {name}")
+    except Exception as e:
+        print(f"Database error during search_supplier: {e}")
+    finally:
+        if conn:
+            conn.close()
+
 def update_supplier(supplier_id, name=None, phone=None, address=None):
     if phone is not None and not re.match(r"^\d{10}$", phone):
         print("Error: Phone number must be exactly 10 digits.")
@@ -52,7 +74,11 @@ def update_supplier(supplier_id, name=None, phone=None, address=None):
     if name is not None and not name.strip():
         print("Error: Supplier name cannot be empty.")
         return
-    
+
+    if not any([name, phone, address]):
+        print("Nothing to update.")
+        return
+
     conn = None
     try:
         conn = create_connection()
@@ -69,9 +95,6 @@ def update_supplier(supplier_id, name=None, phone=None, address=None):
             if address:
                 updates.append("address=%s")
                 values.append(address)
-            if not updates:
-                print("Nothing to update.")
-                return
             sql = "UPDATE suppliers SET " + ", ".join(updates) + " WHERE supplier_id=%s"
             values.append(supplier_id)
             cursor.execute(sql, tuple(values))
@@ -110,3 +133,5 @@ if __name__ == "__main__":
     # Delete supplier
     delete_supplier(2)
     list_suppliers()
+    print("\nSearch Results for 'Moh':")
+    search_supplier("Moh")
