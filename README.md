@@ -113,3 +113,79 @@ Top-Selling Items:
 Bricks: 120 units
 Tiles (Box of 10): 95 units
 Cement: 80 units
+
+## Validation & Error Handling
+All CRUD operations now include input validation and transaction-safe error handling.
+- Customers: validates non-empty name and 10-digit phone before insert/update.
+- Suppliers: validates non-empty name and 10-digit phone before insert/update.
+- Materials: validates non-empty name and non-negative price/quantity.
+- Sales: validates IDs, quantity > 0, non-negative amounts; checks stock before sale; inserts sale and decrements stock in a single transaction with rollback on failure.
+
+## Search Features
+Quick search using partial names:
+- Suppliers:
+    from suppliers_crud import search_supplier
+    search_supplier("Moh")
+- Materials:
+    from materials_crud import search_material
+    search_material("Cem")
+
+
+## Running the App (CLI examples)
+- Customers
+    from customers_crud import add_customer, list_customers, update_customer, delete_customer
+    add_customer("Test User", "1234567890", "Test Address")
+    list_customers()
+    update_customer(1, name="Test User Updated")
+    delete_customer(1)
+- Suppliers
+    from suppliers_crud import add_supplier, list_suppliers, search_supplier
+    add_supplier("Mohan Traders", "9812211223", "Kolkata")
+    list_suppliers()
+    search_supplier("Moh")
+- Materials
+    from materials_crud import add_material, list_materials, search_material, show_low_stock
+    add_material("Cement", 390.0, "quintal", 100, 1)
+    list_materials()
+    search_material("Cem")
+    show_low_stock(20)
+- Sales
+    from sales_crud import add_sale, list_sales, popular_items
+    add_sale(1, 1, 10, 3900.0, "Cash", amount_paid=2000.0, amount_due=1900.0, payment_status="Partially Paid")
+    list_sales()
+    popular_items()
+
+
+## Testing
+This project uses pytest.
+
+### Install
+pip install pytest
+
+### Run all tests
+pytest
+
+
+### Run a single test file
+If tests are in the root:
+    pytest test_customers.py
+
+If tests are inside a tests/ folder:
+    pytest tests/test_customers.py
+
+
+### Notes
+- Some tests open a fresh DB connection after an update/delete to ensure committed state is visible.
+- Use a separate test database to avoid altering production data.
+
+## Day 9 Progress
+- Added validation and error handling across Customers, Suppliers, Materials, Sales.
+- Implemented search for Suppliers and Materials.
+- Wrote basic unit tests for Customers.
+- Fixed transaction visibility in tests by using fresh connections after write operations.
+
+## Day 10 (Next)
+- Dashboard summary (counts, revenue, unpaid, low stock, top items).
+- Low-stock CSV export and optional notification stub.
+- Sales analytics by day/period and top customers.
+
