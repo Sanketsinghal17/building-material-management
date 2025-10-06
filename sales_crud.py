@@ -3,62 +3,115 @@ from datetime import date
 from tabulate import tabulate
 
 def add_sale(customer_id, item_id, quantity, total, payment_method="Cash", amount_paid=None, amount_due=None, payment_status="Pending"):
-    from datetime import date
+    # Input validation
+    if not isinstance(customer_id, int) or customer_id <= 0:
+        print("Error: Invalid customer ID.")
+        return
+    if not isinstance(item_id, int) or item_id <= 0:
+        print("Error: Invalid item ID.")
+        return
+    if not isinstance(quantity, int) or quantity <= 0:
+        print("Error: Quantity must be a positive integer.")
+        return
+    if total < 0 or amount_paid < 0 or amount_due < 0:
+        print("Error: Financial values cannot be negative.")
+        return
+
+    # Handle default values
     if amount_paid is None:
         amount_paid = total
     if amount_due is None:
         amount_due = total - amount_paid
 
-    conn = create_connection()
-    if conn:
-        cursor = conn.cursor()
-        sql = '''
-            INSERT INTO sales (customer_id, item_id, quantity, sale_date, total,
-                               payment_method, amount_paid, amount_due, payment_status)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
-        '''
-        values = (customer_id, item_id, quantity, date.today(), total,
-                  payment_method, amount_paid, amount_due, payment_status)
-        cursor.execute(sql, values)
-        conn.commit()
-        print(f"Sale recorded for customer ID {customer_id}.")
-        conn.close()
+    conn = None
+    try:
+        conn = create_connection()
+        if conn:
+            cursor = conn.cursor()
 
+            # Check if enough stock is available
+            cursor.execute("SELECT quantity_in_stock FROM materials WHERE id = %s", (item_id,))
+            result = cursor.fetchone()
+            if not result:
+                print(f"Error: Material with ID {item_id} not found.")
+                return
+            current_stock = result[0]
+            if current_stock < quantity:
+                print(f"Error: Not enough stock. Only {current_stock} units available.")
+                return
+
+            # Insert the sale
+            sql = '''
+                INSERT INTO sales (customer_id, item_id, quantity, sale_date, total,
+                                   payment_method, amount_paid, amount_due, payment_status)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+            '''
+            values = (customer_id, item_id, quantity, date.today(), total,
+                      payment_method, amount_paid, amount_due, payment_status)
+            cursor.execute(sql, values)
+
+            # Update material stock
+            cursor.execute(
+                "UPDATE materials SET quantity_in_stock = quantity_in_stock - %s WHERE id = %s",
+                (quantity, item_id)
+            )
+
+            # Commit both operations together
+            conn.commit()
+            print(f"Sale recorded for customer ID {customer_id} and stock updated.")
+    except Exception as e:
+        print(f"Database error during add_sale: {e}")
+        if conn:
+            conn.rollback()
+            print("Transaction rolled back due to error.")
+    finally:
+        if conn:
+            conn.close()
 
 def list_sales():
-    conn = create_connection()
-    if conn:
-        cursor = conn.cursor()
-        cursor.execute("""
-            SELECT s.order_no, c.customer_name, m.item_name, s.quantity, s.sale_date, s.total,
-                   s.payment_method, s.amount_paid, s.amount_due, s.payment_status
-            FROM sales s
-            JOIN customers c ON s.customer_id = c.customer_id
-            JOIN materials m ON s.item_id = m.id
-        """)
-        rows = cursor.fetchall()
-        headers = ["OrderNo", "Customer", "Item", "Qty", "Date", "Total", "Payment", "Paid", "Due", "Status"]
-        print(tabulate(rows, headers=headers, tablefmt="grid"))
-        conn.close()
-        
+    conn = None
+    try:
+        conn = create_connection()
+        if conn:
+            cursor = conn.cursor()
+            cursor.execute("""
+                SELECT s.order_no, c.customer_name, m.item_name, s.quantity, s.sale_date, s.total,
+                       s.payment_method, s.amount_paid, s.amount_due, s.payment_status
+                FROM sales s
+                JOIN customers c ON s.customer_id = c.customer_id
+                JOIN materials m ON s.item_id = m.id
+            """)
+            rows = cursor.fetchall()
+            headers = ["OrderNo", "Customer", "Item", "Qty", "Date", "Total", "Payment", "Paid", "Due", "Status"]
+            print(tabulate(rows, headers=headers, tablefmt="grid"))
+    except Exception as e:
+        print(f"Database error during list_sales: {e}")
+    finally:
+        if conn:
+            conn.close()
+
 def popular_items():
-    conn = create_connection()
-    if conn:
-        cursor = conn.cursor()
-        cursor.execute("""
-            SELECT m.item_name, SUM(s.quantity) as total_sold
-            FROM sales s JOIN materials m ON s.item_id = m.id
-            GROUP BY m.item_name
-            ORDER BY total_sold DESC
-            LIMIT 5
-        """)
-        rows = cursor.fetchall()
-        print("Top-Selling Items:")
-        for item, sold in rows:
-            print(f"{item}: {sold} units")
-        conn.close()
-
-
+    conn = None
+    try:
+        conn = create_connection()
+        if conn:
+            cursor = conn.cursor()
+            cursor.execute("""
+                SELECT m.item_name, SUM(s.quantity) as total_sold
+                FROM sales s JOIN materials m ON s.item_id = m.id
+                GROUP BY m.item_name
+                ORDER BY total_sold DESC
+                LIMIT 5
+            """)
+            rows = cursor.fetchall()
+            print("Top-Selling Items:")
+            for item, sold in rows:
+                print(f"{item}: {sold} units")
+    except Exception as e:
+        print(f"Database error during popular_items: {e}")
+    finally:
+        if conn:
+            conn.close()
 
 if __name__ == "__main__":
     # Test with valid customer and item IDs
@@ -77,6 +130,3 @@ if __name__ == "__main__":
     add_sale(customer_id=1, item_id=5, quantity=8, total=360.0, payment_method="Cash", amount_paid=360.0, amount_due=0.0, payment_status="Paid")
     list_sales()
     popular_items()
-
-
-
