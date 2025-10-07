@@ -1,5 +1,8 @@
+import csv
 from db_connect import create_connection
 from tabulate import tabulate
+from datetime import datetime
+
 
 def add_material(item_name, price_per_unit, unit_type, quantity, supplier_id):
     conn = None
@@ -122,6 +125,82 @@ def show_low_stock(threshold=20):
         if conn:
             conn.close()
 
+def export_low_stock_csv(path=None, threshold=20):
+    """
+    Export low stock materials to a CSV.
+    Columns: item_name, quantity_in_stock, unit_type, supplier_id
+    """
+    conn = None
+    try:
+        if path is None:
+            stamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            path = f"low_stock_{threshold}_{stamp}.csv"
+
+        conn = create_connection()
+        if conn:
+            cursor = conn.cursor()
+            cursor.execute("""
+                SELECT item_name, quantity_in_stock, unit_type, supplier_id
+                FROM materials
+                WHERE quantity_in_stock <= %s
+                ORDER BY quantity_in_stock ASC, item_name ASC
+            """, (threshold,))
+            rows = cursor.fetchall()
+
+            if not rows:
+                print(f"No items at or below threshold {threshold}. CSV not created.")
+                return None
+
+            with open(path, mode="w", newline="", encoding="utf-8") as f:
+                writer = csv.writer(f)
+                writer.writerow(["item_name", "quantity_in_stock", "unit_type", "supplier_id"])
+                writer.writerows(rows)
+
+            print(f"Low stock report saved to {path}")
+            return path
+    except Exception as e:
+        print(f"Error during export_low_stock_csv: {e}")
+        return None
+    finally:
+        if conn:
+            conn.close()
+
+def notify_low_stock(threshold=20, channel="stdout"):
+    """
+    Notification stub. For now, prints to stdout.
+    Extend later to email/Slack/SMS by implementing those channels.
+    """
+    conn = None
+    try:
+        conn = create_connection()
+        if conn:
+            cursor = conn.cursor()
+            cursor.execute("""
+                SELECT item_name, quantity_in_stock
+                FROM materials
+                WHERE quantity_in_stock <= %s
+                ORDER BY quantity_in_stock ASC, item_name ASC
+            """, (threshold,))
+            rows = cursor.fetchall()
+
+            if not rows:
+                print(f"No low-stock items at or below {threshold}.")
+                return
+
+            if channel == "stdout":
+                print(f"Low-stock items (≤{threshold}):")
+                for name, qty in rows:
+                    print(f"- {name}: {qty} units remaining")
+            else:
+                # Placeholder for future channels (e.g., 'email', 'slack')
+                print(f"[{channel}] Notification channel not configured yet.")
+    except Exception as e:
+        print(f"Error during notify_low_stock: {e}")
+    finally:
+        if conn:
+            conn.close()
+
+
 if __name__ == "__main__":
     materials = [
         ("Cement", 390.00, "quintal", 100, 1),
@@ -144,3 +223,8 @@ if __name__ == "__main__":
     search_material("Cem")
     show_low_stock()
     show_low_stock(10)
+    from materials_crud import export_low_stock_csv, notify_low_stock
+    export_low_stock_csv(threshold=20)          # creates timestamped CSV
+    export_low_stock_csv("low_stock.csv", 10)   # custom path and threshold
+    notify_low_stock(15)                        # prints low stock list
+

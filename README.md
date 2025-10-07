@@ -184,8 +184,34 @@ If tests are inside a tests/ folder:
 - Wrote basic unit tests for Customers.
 - Fixed transaction visibility in tests by using fresh connections after write operations.
 
-## Day 10 (Next)
-- Dashboard summary (counts, revenue, unpaid, low stock, top items).
-- Low-stock CSV export and optional notification stub.
-- Sales analytics by day/period and top customers.
+## Dashboard Section
+Show how to run it with different arguments:
+
+python dashboard.py
+python dashboard.py --threshold 10 --days 30
+
+## Low-stock Reporting
+Exporting a CSV and notifications:
+
+    from materials_crud import export_low_stock_csv, notify_low_stock
+    export_low_stock_csv(threshold=10)
+    notify_low_stock(20)
+    Or, if you have the CLI:
+
+python materials_tools.py export --threshold 15
+python materials_tools.py notify --threshold 10
+
+## Analytics Section
+Daily/period/top customers via CLI:
+
+python analytics_cli.py daily --days 7
+python analytics_cli.py period --start 2025-10-01 --end 2025-10-31
+python analytics_cli.py top --limit 5
+
+Or, direct function use:
+
+    from analytics import sales_by_day, revenue_period, top_customers
+    sales_by_day(7)
+    revenue_period("2025-10-01", "2025-10-31")
+    top_customers(5)
 
