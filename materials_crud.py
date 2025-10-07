@@ -126,6 +126,7 @@ def show_low_stock(threshold=20):
             conn.close()
 
 def export_low_stock_csv(path=None, threshold=20):
+    """Exports low stock materials (below threshold) to a CSV file."""
     """
     Export low stock materials to a CSV.
     Columns: item_name, quantity_in_stock, unit_type, supplier_id

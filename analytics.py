@@ -3,6 +3,7 @@ from tabulate import tabulate
 from db_connect import create_connection
 
 def sales_by_day(limit_days=7):
+    """Outputs per-day sales totals and revenue for the given number of recent days."""
     """
     Show total revenue per day for the last N days (including today).
     """
@@ -69,9 +70,7 @@ def revenue_period(start_date_str, end_date_str):
             conn.close()
 
 def top_customers(limit=5):
-    """
-    List top N customers by total sales.
-    """
+    """Lists the top N customers by total revenue."""
     if not isinstance(limit, int) or limit <= 0:
         print("limit must be a positive integer")
         return

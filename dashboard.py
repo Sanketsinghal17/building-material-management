@@ -6,6 +6,7 @@ from datetime import date, timedelta
 from datetime import date, timedelta
 
 def show_dashboard(low_stock_threshold=20, last_n_days=0):
+    """Prints a summary dashboard with counts, revenue, unpaid, low stock, and top items."""
     conn = None
     try:
         conn = create_connection()
