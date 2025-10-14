@@ -1,6 +1,7 @@
 import pytest
 from customers_crud import add_customer, list_customers, update_customer, delete_customer
 from suppliers_crud import add_supplier, list_suppliers, update_supplier, delete_supplier
+from materials_crud import add_material, update_material, delete_material, show_low_stock
 from db_connect import create_connection
 
 @pytest.fixture(scope='function')
@@ -117,3 +118,62 @@ def test_delete_supplier(db_conn):
     fresh_cursor.close()
     fresh_conn.close()
     assert result is None
+
+def test_add_material_valid(db_conn):
+    add_material("Test Material", 250.0, "kg", 50, supplier_id=1)
+    cursor = db_conn.cursor(buffered=True)
+    cursor.execute("SELECT item_name, quantity_in_stock FROM materials WHERE item_name=%s", ("Test Material",))
+    row = cursor.fetchone()
+    cursor.close()
+    assert row is not None
+    assert row[0] == "Test Material"
+    assert row[1] == 50
+
+
+def test_update_material(db_conn):
+    add_material("Material For Update", 120.0, "kg", 10, supplier_id=1)
+    cursor = db_conn.cursor(buffered=True)
+    cursor.execute("SELECT id FROM materials WHERE item_name=%s", ("Material For Update",))
+    row = cursor.fetchone()
+    assert row is not None
+    mat_id = row[0]
+    cursor.close()
+
+    update_material(mat_id, price=99.0)
+    db_conn.commit()
+
+    cursor2 = db_conn.cursor(buffered=True)
+    cursor2.execute("SELECT price_per_unit FROM materials WHERE id=%s", (mat_id,))
+    result = cursor2.fetchone()
+    cursor2.close()
+    assert result is not None
+    assert float(result[0]) == 99.0
+
+
+def test_delete_material(db_conn):
+    add_material("Material For Delete", 10.0, "kg", 2, supplier_id=1)
+    cursor = db_conn.cursor(buffered=True)
+    cursor.execute("SELECT id FROM materials WHERE item_name=%s", ("Material For Delete",))
+    row = cursor.fetchone()
+    assert row is not None
+    mat_id = row[0]
+    cursor.close()
+
+    delete_material(mat_id)
+
+    fresh_conn = create_connection()
+    fresh_cursor = fresh_conn.cursor(buffered=True)
+    fresh_cursor.execute("SELECT * FROM materials WHERE id=%s", (mat_id,))
+    result = fresh_cursor.fetchone()
+    fresh_cursor.close()
+    fresh_conn.close()
+    assert result is None
+
+
+def test_show_low_stock(db_conn):
+    from materials_crud import add_material, show_low_stock
+    add_material("LowStockTest", 30.0, "kg", 3, supplier_id=1)
+    items = show_low_stock(5)
+    assert items is not None, "show_low_stock should not return None"
+    names = [item['item_name'] for item in items if 'item_name' in item]
+    assert "LowStockTest" in names

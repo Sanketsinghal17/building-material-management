@@ -107,7 +107,7 @@ def show_low_stock(threshold=20):
     try:
         conn = create_connection()
         if conn:
-            cursor = conn.cursor()
+            cursor = conn.cursor(dictionary=True)
             cursor.execute(
                 "SELECT item_name, quantity_in_stock FROM materials WHERE quantity_in_stock <= %s",
                 (threshold,)
@@ -115,15 +115,19 @@ def show_low_stock(threshold=20):
             rows = cursor.fetchall()
             if rows:
                 print("Low Stock Alert!")
-                for item, qty in rows:
-                    print(f"{item}: {qty} units left")
+                for item in rows:
+                    print(f"{item['item_name']}: {item['quantity_in_stock']} units left")
+                return rows  # Always return a list (may be empty)
             else:
                 print("All stocks are sufficient.")
+                return []
     except Exception as e:
         print(f"Database error during show_low_stock: {e}")
+        return []
     finally:
         if conn:
             conn.close()
+
 
 def export_low_stock_csv(path=None, threshold=20):
     """Exports low stock materials (below threshold) to a CSV file."""
