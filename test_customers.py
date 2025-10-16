@@ -8,15 +8,16 @@ from db_connect import create_connection
 def ensure_test_data(db_conn):
     cursor = db_conn.cursor()
     try:
-        # Disable foreign key checks
+        # Wipe out all test data before anything else
         cursor.execute("SET FOREIGN_KEY_CHECKS=0")
         cursor.execute("TRUNCATE TABLE sales")
         cursor.execute("TRUNCATE TABLE materials")
         cursor.execute("TRUNCATE TABLE customers")
         cursor.execute("TRUNCATE TABLE suppliers")
-        # Re-enable foreign key checks
         cursor.execute("SET FOREIGN_KEY_CHECKS=1")
-        # Now add fresh test data
+        db_conn.commit()  # Make sure rows are physically cleared!
+
+        # Insert the necessary rows
         cursor.execute("""
             INSERT INTO suppliers (supplier_id, supplier_name, phone, address)
             VALUES (1, 'Test Supplier', '1234567890', 'Test Address')
@@ -32,6 +33,7 @@ def ensure_test_data(db_conn):
         db_conn.commit()
     finally:
         cursor.close()
+
 
 
 @pytest.fixture(scope='function')
@@ -233,11 +235,20 @@ def test_stock_decrement_on_sale(db_conn):
     cursor = db_conn.cursor(buffered=True, dictionary=True)
     cursor.execute("SELECT quantity_in_stock FROM materials WHERE id=%s", (1,))
     before = cursor.fetchone()['quantity_in_stock']
+    cursor.close()  # Must close it!
+
     add_sale(customer_id=1, item_id=1, quantity=3, total=150.0)
-    cursor.execute("SELECT quantity_in_stock FROM materials WHERE id=%s", (1,))
-    after = cursor.fetchone()['quantity_in_stock']
-    cursor.close()
+
+    # OPEN A NEW CURSOR NOW!
+    fresh_cursor = db_conn.cursor(buffered=True, dictionary=True)
+    fresh_cursor.execute("SELECT quantity_in_stock FROM materials WHERE id=%s", (1,))
+    after = fresh_cursor.fetchone()['quantity_in_stock']
+    fresh_cursor.close()
+
+    print(f"[Test Debug] Stock before: {before}, after: {after}")
     assert after == before - 3
+
+
 
 
 

@@ -4,6 +4,8 @@ from tabulate import tabulate
 
 
 def add_sale(customer_id, item_id, quantity, total, payment_method="Cash", amount_paid=None, amount_due=None, payment_status="Pending"):
+    print(f"add_sale CALLED: customer_id={customer_id}, item_id={item_id}, quantity={quantity}, total={total}")
+
     # 1. Early ID and quantity checks
     if not isinstance(customer_id, int) or customer_id <= 0:
         print("Error: Invalid customer ID.")
@@ -29,19 +31,22 @@ def add_sale(customer_id, item_id, quantity, total, payment_method="Cash", amoun
         print("Error: Financial values cannot be negative.")
         return
 
-    # 4. DB logic (unchanged)
+    # 4. DB logic with step-by-step prints
     conn = None
     try:
         conn = create_connection()
         if conn:
             cursor = conn.cursor()
 
+            print("[DEBUG] Querying stock for item_id:", item_id)
             cursor.execute("SELECT quantity_in_stock FROM materials WHERE id = %s", (item_id,))
             result = cursor.fetchone()
+            print("[DEBUG] Material row for stock:", result)
             if not result:
                 print(f"Error: Material with ID {item_id} not found.")
                 return
             current_stock = result[0]
+            print(f"[DEBUG] Stock before sale: {current_stock}")
             if current_stock < quantity:
                 print(f"Error: Not enough stock. Only {current_stock} units available.")
                 return
@@ -54,15 +59,21 @@ def add_sale(customer_id, item_id, quantity, total, payment_method="Cash", amoun
             '''
             values = (customer_id, item_id, quantity, date.today(), total,
                       payment_method, amount_paid, amount_due, payment_status)
+            print("[DEBUG] Inserting sale:", values)
             cursor.execute(sql, values)
 
             # Update material stock
+            print(f"[DEBUG] Decrementing stock by {quantity} for item_id {item_id}")
             cursor.execute(
                 "UPDATE materials SET quantity_in_stock = quantity_in_stock - %s WHERE id = %s",
                 (quantity, item_id)
             )
             conn.commit()
+
+            cursor.execute("SELECT quantity_in_stock FROM materials WHERE id=%s", (item_id,))
+            new_stock = cursor.fetchone()[0]
             print(f"Sale recorded for customer ID {customer_id} and stock updated.")
+            print(f"[DEBUG] Stock after sale: {new_stock}")
 
     except Exception as e:
         print(f"Database error during add_sale: {e}")
@@ -72,6 +83,7 @@ def add_sale(customer_id, item_id, quantity, total, payment_method="Cash", amoun
     finally:
         if conn:
             conn.close()
+
 
 
 
