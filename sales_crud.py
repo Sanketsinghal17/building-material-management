@@ -2,8 +2,9 @@ from db_connect import create_connection
 from datetime import date
 from tabulate import tabulate
 
+
 def add_sale(customer_id, item_id, quantity, total, payment_method="Cash", amount_paid=None, amount_due=None, payment_status="Pending"):
-    # Input validation
+    # 1. Early ID and quantity checks
     if not isinstance(customer_id, int) or customer_id <= 0:
         print("Error: Invalid customer ID.")
         return
@@ -13,23 +14,28 @@ def add_sale(customer_id, item_id, quantity, total, payment_method="Cash", amoun
     if not isinstance(quantity, int) or quantity <= 0:
         print("Error: Quantity must be a positive integer.")
         return
-    if total < 0 or amount_paid < 0 or amount_due < 0:
-        print("Error: Financial values cannot be negative.")
+    if total is None or total < 0:
+        print("Error: Total cannot be negative or None.")
         return
 
-    # Handle default values
+    # 2. Set defaults first
     if amount_paid is None:
         amount_paid = total
     if amount_due is None:
         amount_due = total - amount_paid
 
+    # 3. Then check for negative values
+    if amount_paid < 0 or amount_due < 0:
+        print("Error: Financial values cannot be negative.")
+        return
+
+    # 4. DB logic (unchanged)
     conn = None
     try:
         conn = create_connection()
         if conn:
             cursor = conn.cursor()
 
-            # Check if enough stock is available
             cursor.execute("SELECT quantity_in_stock FROM materials WHERE id = %s", (item_id,))
             result = cursor.fetchone()
             if not result:
@@ -55,10 +61,9 @@ def add_sale(customer_id, item_id, quantity, total, payment_method="Cash", amoun
                 "UPDATE materials SET quantity_in_stock = quantity_in_stock - %s WHERE id = %s",
                 (quantity, item_id)
             )
-
-            # Commit both operations together
             conn.commit()
             print(f"Sale recorded for customer ID {customer_id} and stock updated.")
+
     except Exception as e:
         print(f"Database error during add_sale: {e}")
         if conn:
@@ -67,6 +72,9 @@ def add_sale(customer_id, item_id, quantity, total, payment_method="Cash", amoun
     finally:
         if conn:
             conn.close()
+
+
+
 
 def list_sales():
     conn = None
@@ -90,6 +98,7 @@ def list_sales():
         if conn:
             conn.close()
 
+
 def popular_items():
     conn = None
     try:
@@ -112,6 +121,7 @@ def popular_items():
     finally:
         if conn:
             conn.close()
+
 
 if __name__ == "__main__":
     # Test with valid customer and item IDs

@@ -2,7 +2,37 @@ import pytest
 from customers_crud import add_customer, list_customers, update_customer, delete_customer
 from suppliers_crud import add_supplier, list_suppliers, update_supplier, delete_supplier
 from materials_crud import add_material, update_material, delete_material, show_low_stock
+from sales_crud import add_sale, list_sales
 from db_connect import create_connection
+
+def ensure_test_data(db_conn):
+    cursor = db_conn.cursor()
+    try:
+        # Disable foreign key checks
+        cursor.execute("SET FOREIGN_KEY_CHECKS=0")
+        cursor.execute("TRUNCATE TABLE sales")
+        cursor.execute("TRUNCATE TABLE materials")
+        cursor.execute("TRUNCATE TABLE customers")
+        cursor.execute("TRUNCATE TABLE suppliers")
+        # Re-enable foreign key checks
+        cursor.execute("SET FOREIGN_KEY_CHECKS=1")
+        # Now add fresh test data
+        cursor.execute("""
+            INSERT INTO suppliers (supplier_id, supplier_name, phone, address)
+            VALUES (1, 'Test Supplier', '1234567890', 'Test Address')
+        """)
+        cursor.execute("""
+            INSERT INTO customers (customer_id, customer_name, phone, address)
+            VALUES (1, 'Test Customer', '9876543210', 'Test Address')
+        """)
+        cursor.execute("""
+            INSERT INTO materials (id, item_name, price_per_unit, unit_type, quantity_in_stock, supplier_id)
+            VALUES (1, 'Test Material', 50.0, 'pcs', 100, 1)
+        """)
+        db_conn.commit()
+    finally:
+        cursor.close()
+
 
 @pytest.fixture(scope='function')
 def db_conn():
@@ -120,14 +150,19 @@ def test_delete_supplier(db_conn):
     assert result is None
 
 def test_add_material_valid(db_conn):
-    add_material("Test Material", 250.0, "kg", 50, supplier_id=1)
+    # Safely remove all prior "Test Material" before insert to avoid confusion
     cursor = db_conn.cursor(buffered=True)
-    cursor.execute("SELECT item_name, quantity_in_stock FROM materials WHERE item_name=%s", ("Test Material",))
+    cursor.execute("DELETE FROM materials WHERE item_name=%s", ("Test Material",))
+    db_conn.commit()
+
+    add_material("Test Material", 250.0, "kg", 50, supplier_id=1)
+    cursor.execute("SELECT item_name, quantity_in_stock FROM materials WHERE item_name=%s ORDER BY id DESC LIMIT 1", ("Test Material",))
     row = cursor.fetchone()
     cursor.close()
     assert row is not None
     assert row[0] == "Test Material"
     assert row[1] == 50
+
 
 
 def test_update_material(db_conn):
@@ -177,3 +212,70 @@ def test_show_low_stock(db_conn):
     assert items is not None, "show_low_stock should not return None"
     names = [item['item_name'] for item in items if 'item_name' in item]
     assert "LowStockTest" in names
+    
+def test_add_sale_valid(db_conn):
+    ensure_test_data(db_conn)
+    add_sale(customer_id=1, item_id=1, quantity=5, total=250.0, payment_method="Cash", amount_paid=150.0, amount_due=100.0, payment_status="Partial")
+    cursor = db_conn.cursor(buffered=True, dictionary=True)
+    cursor.execute("SELECT * FROM sales WHERE customer_id=%s AND item_id=%s ORDER BY order_no DESC LIMIT 1", (1, 1))
+    sale = cursor.fetchone()
+    cursor.close()
+    assert sale is not None
+    assert sale["quantity"] == 5
+    assert float(sale["total"]) == 250.0
+    assert sale["payment_method"] == "Cash"
+    assert float(sale["amount_paid"]) == 150.0
+    assert float(sale["amount_due"]) == 100.0
+    assert sale["payment_status"] == "Partial"
+
+def test_stock_decrement_on_sale(db_conn):
+    ensure_test_data(db_conn)
+    cursor = db_conn.cursor(buffered=True, dictionary=True)
+    cursor.execute("SELECT quantity_in_stock FROM materials WHERE id=%s", (1,))
+    before = cursor.fetchone()['quantity_in_stock']
+    add_sale(customer_id=1, item_id=1, quantity=3, total=150.0)
+    cursor.execute("SELECT quantity_in_stock FROM materials WHERE id=%s", (1,))
+    after = cursor.fetchone()['quantity_in_stock']
+    cursor.close()
+    assert after == before - 3
+
+
+
+
+def test_add_sale_invalid_customer(db_conn):
+    ensure_test_data(db_conn)
+    add_sale(customer_id=-1, item_id=1, quantity=2, total=100)
+    cursor = db_conn.cursor(buffered=True)
+    cursor.execute("SELECT * FROM sales WHERE customer_id=-1")
+    row = cursor.fetchone()
+    cursor.close()
+    assert row is None
+
+def test_add_sale_invalid_item(db_conn):
+    ensure_test_data(db_conn)
+    add_sale(customer_id=1, item_id=-1, quantity=2, total=100)
+    cursor = db_conn.cursor(buffered=True)
+    cursor.execute("SELECT * FROM sales WHERE item_id=-1")
+    row = cursor.fetchone()
+    cursor.close()
+    assert row is None
+
+def test_add_sale_insufficient_stock(db_conn):
+    ensure_test_data(db_conn)
+    cursor = db_conn.cursor(buffered=True)
+    cursor.execute("SELECT quantity_in_stock FROM materials WHERE id=%s", (1,))
+    stock = cursor.fetchone()
+    quantity = stock[0] + 100 if stock and stock[0] is not None else 9999
+    add_sale(customer_id=1, item_id=1, quantity=quantity, total=9999)
+    cursor.execute("SELECT * FROM sales WHERE quantity=%s ORDER BY order_no DESC LIMIT 1", (quantity,))
+    row = cursor.fetchone()
+    cursor.close()
+    assert row is None
+
+def test_list_sales_output(db_conn, capsys):
+    ensure_test_data(db_conn)
+    add_sale(customer_id=1, item_id=1, quantity=1, total=50)
+    list_sales()
+    captured = capsys.readouterr()
+    assert "Customer" in captured.out
+    assert "Qty" in captured.out
